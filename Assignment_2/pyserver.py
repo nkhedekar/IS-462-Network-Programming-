@@ -35,15 +35,15 @@ def removeWord(word):
 def threaded(c):
 	while True: 
 		# data received from client
-		print("In threaded")
+		#print("In threaded")
 		data = c.recv(1024)
 		if not data:
 			print('Bye') 
 			break
 		data = data.decode('ascii')
-		print("recieved "+ data)
+		print("Data recieved as " + data)
 		if data[0] == 'q':
-			print("querying...")
+			print("querying the dictionary for "+ data[1:])
 			msg = queryWord(data[1:])
 			if msg != None:
 				print("Found : " + msg)
@@ -51,33 +51,44 @@ def threaded(c):
 			else:
 				msg = unavailable.encode('ascii')
 				print("Word not in Dictionary")
-			c.send(msg)	
 		elif data[0] == 'a':
 			res = addWord(data[1:])
 			if res:
 				msg = "Added"
 			else:
 				msg = "Duplicate"
-			c.send(msg.encode('ascii'))
+			msg = msg.encode('ascii')
 		elif data[0] == 'r':
 			if removeWord(data[1:]):
 				msg = success.encode('ascii')
 			else:
 				msg = unavailable.encode('ascii')
-			c.send(msg)
+		try:
+			c.send(msg)	
+		except:
+			print("Connection closed. Client Left unexpectedly.")
 			# connection closed
 	c.close()
 
 
 def Main():
 	host = ""
-	port = int(input("Please enter port number: "))
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.bind((host, port))
-	print("socket bound to port", port)
+	while True:
+		try:
+			port = int(input("Please enter the desired port number for the server: "))
+			s.bind((host, port))
+			break
+		except ValueError:
+			print("The port number must be an integer.")
+		except OSError:
+			print("Selected port number is in use, please enter an unused port number")
+		except OverflowError:
+			print("Maximum permissable value of port number is 65536")	
+	print("socket bound to port ", port)
 	# put the socket into listening mode
 	s.listen(10)
-	print("socket is listening")
+	print("socket is now listening")
 	# a forever loop until client wants to exit
 	while True:
 	# establish connection with client
